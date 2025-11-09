@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Price Alarm</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Crypto Price Alarm</h1>
+            <div class="header-right">
+                <button id="testAlarmBtn" class="btn-test" title="Test alarm sound and volume">
+                    🔔 Test Alarm
+                </button>
+                <div class="status-indicator">
+                    <span class="status-dot" id="statusDot"></span>
+                    <span id="statusText">Initializing...</span>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <!-- Add Trading Pair Section -->
+            <section class="card">
+                <h2>Add Trading Pair</h2>
+                <div class="form-group">
+                    <input type="text" id="assetTicker" placeholder="Enter trading pair (e.g., BTCUSDT, ETHBTC)" />
+                    <button id="addAssetBtn" class="btn-primary">Add Pair</button>
+                </div>
+                <div id="assetError" class="error-message"></div>
+            </section>
+
+            <!-- Main Content Card with Tabs -->
+            <section class="card">
+                <!-- Tab Buttons -->
+                <div class="tab-buttons">
+                    <button class="tab-button active" data-tab="monitored-pairs">Monitored Pairs</button>
+                    <button class="tab-button" data-tab="all-alarms">All Active Alarms</button>
+                </div>
+
+                <!-- Tab Contents -->
+                <div class="tab-contents">
+                    <!-- Monitored Pairs Tab -->
+                    <div class="tab-content active" id="monitored-pairs">
+                        <div id="assetsList" class="assets-list">
+                            <p class="placeholder">No pairs added yet</p>
+                        </div>
+                    </div>
+
+                    <!-- All Active Alarms Tab -->
+                    <div class="tab-content" id="all-alarms">
+                        <div class="data-grid">
+                            <table id="allAlarmsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Trading Pair</th>
+                                        <th>Type of Alarm</th>
+                                        <th>% Till Trigger</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Alarms Configuration -->
+            <section class="card" id="alarmsSection" style="display: none;">
+                <h2>Configure Alarms for <span id="selectedAssetName"></span></h2>
+                <div class="alarm-forms">
+                    <!-- Target Price Alarm -->
+                    <div class="alarm-form">
+                        <h3>Target Price Alert</h3>
+                        <div class="form-row">
+                            <input type="number" id="targetPrice" placeholder="Target price" step="any" />
+                            <select id="targetDirection">
+                                <option value="any">From any direction</option>
+                                <option value="up">From below (going up)</option>
+                                <option value="down">From above (going down)</option>
+                            </select>
+                            <button class="btn-secondary" id="addTargetAlarmBtn">Add</button>
+                        </div>
+                    </div>
+
+                    <!-- Percentage from Max/Min -->
+                    <div class="alarm-form">
+                        <h3>% Change from Max/Min</h3>
+                        <div class="form-row">
+                            <input type="number" id="percentFromExtreme" placeholder="Percentage" step="0.1" />
+                            <select id="extremeType">
+                                <option value="max">% down from max</option>
+                                <option value="min">% up from min</option>
+                            </select>
+                            <button class="btn-secondary" id="addExtremeAlarmBtn">Add</button>
+                        </div>
+                    </div>
+
+                    <!-- Percentage Move in Timeframe -->
+                    <div class="alarm-form">
+                        <h3>% Move in Timeframe</h3>
+                        <div class="form-row">
+                            <input type="number" id="percentMove" placeholder="Percentage" step="0.1" />
+                            <select id="moveDirection">
+                                <option value="any">Any direction</option>
+                                <option value="up">Upward</option>
+                                <option value="down">Downward</option>
+                            </select>
+                            <input type="number" id="timeframeValue" placeholder="Time" step="1" min="1" />
+                            <select id="timeframeUnit">
+                                <option value="minutes">Minutes</option>
+                                <option value="hours">Hours</option>
+                                <option value="days">Days</option>
+                                <option value="since_start">Since start</option>
+                            </select>
+                            <button class="btn-secondary" id="addTimeframeAlarmBtn">Add</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Alarms List -->
+                <div class="alarms-list">
+                    <h3>Active Alarms</h3>
+                    <div id="activeAlarmsList"></div>
+                </div>
+
+                <button class="btn-back" id="backToAssetsBtn">Back to Assets</button>
+            </section>
+        </main>
+    </div>
+
+    <!-- Alarm Modal -->
+    <div id="alarmModal" class="modal">
+        <div class="modal-content">
+            <div class="alarm-icon">⚠️</div>
+            <div id="alarmDirection" class="alarm-direction"></div>
+            <h2>PRICE ALARM!</h2>
+            <div id="alarmMessage"></div>
+            <div id="alarmButtons">
+                <button id="dismissAlarmBtn" class="btn-dismiss">DISMISS ALARM</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
