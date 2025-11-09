@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(start index.html)",
+      "Bash(where:*)",
+      "Bash(python -m http.server:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
