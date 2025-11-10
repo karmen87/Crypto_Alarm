@@ -8,7 +8,7 @@ import time
 import json
 import os
 from datetime import datetime
-from threading import Thread, Lock
+from threading import Thread, RLock
 import uuid
 
 
@@ -18,7 +18,7 @@ class CryptoMonitorBinance:
         self.assets = {}
         self.alarms = {}
         self.price_history = {}
-        self.lock = Lock()
+        self.lock = RLock()
         self.monitoring = False
         self.monitor_thread = None
         self.price_update_callback = None
