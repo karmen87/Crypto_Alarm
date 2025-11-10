@@ -32,30 +32,26 @@ def handle_disconnect():
 
 @socketio.on('add_asset')
 def handle_add_asset(data):
-    """Add a new trading pair - runs asynchronously"""
+    """Add a new trading pair - runs synchronously with proper context"""
     pair = data.get('pair', '').strip().upper()
     print(f"📥 Request to add: {pair}")
 
-    def add_asset_async():
-        try:
-            result = monitor.add_asset(pair)
-            print(f"📤 Result: {result.get('success')}")
+    try:
+        # Run directly (synchronously) - Binance API is fast enough
+        result = monitor.add_asset(pair)
+        print(f"📤 Result: {result.get('success')}")
 
-            if result['success']:
-                socketio.emit('asset_added', result)
-            else:
-                socketio.emit('error', {'message': result['message']})
-        except Exception as e:
-            print(f"❌ Error: {e}")
-            import traceback
-            traceback.print_exc()
-            socketio.emit('error', {'message': str(e)})
-
-    # Run in background to avoid blocking WebSocket
-    Thread(target=add_asset_async, daemon=True).start()
-
-    # Send immediate acknowledgment
-    emit('asset_adding', {'pair': pair, 'message': f'Fetching {pair} from Binance...'})
+        if result['success']:
+            emit('asset_added', result, broadcast=True)
+            print(f"✅ Emitted success for {pair}")
+        else:
+            emit('error', {'message': result['message']})
+            print(f"⚠️ Emitted error: {result['message']}")
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        import traceback
+        traceback.print_exc()
+        emit('error', {'message': str(e)})
 
 @socketio.on('remove_asset')
 def handle_remove_asset(data):
