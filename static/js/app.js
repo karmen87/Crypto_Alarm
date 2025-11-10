@@ -44,11 +44,17 @@ class CryptoAlarmClient {
             this.renderAssets();
         });
 
+        this.socket.on('asset_adding', (data) => {
+            this.updateStatus('Adding ' + data.pair + '... (5-10 seconds)', '');
+            this.showError('Fetching data from CoinGecko API... Please wait (this takes 5-10 seconds due to rate limiting)');
+        });
+
         this.socket.on('asset_added', (data) => {
             if (data.success) {
                 this.assets[data.asset.ticker] = data.asset;
                 this.renderAssets();
                 this.clearError();
+                this.updateStatus('Connected', 'active');
                 document.getElementById('assetTicker').value = '';
             }
         });
