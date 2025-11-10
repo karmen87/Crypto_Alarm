@@ -61,23 +61,31 @@ class CryptoMonitorBinance:
         try:
             # Binance uses symbols like BTCUSDT (no separator)
             url = f'https://api.binance.com/api/v3/ticker/24hr?symbol={symbol}'
+            print(f"  Calling Binance API: {url}")
             response = requests.get(url, timeout=10)
+
+            print(f"  Status code: {response.status_code}")
 
             if response.status_code == 200:
                 data = response.json()
+                price = float(data['lastPrice'])
+                print(f"  ✅ Got price: ${price:,.2f}")
                 return {
-                    'price': float(data['lastPrice']),
+                    'price': price,
                     'change24h': float(data['priceChangePercent']),
                     'high24h': float(data['highPrice']),
                     'low24h': float(data['lowPrice']),
                     'volume': float(data['volume'])
                 }
             else:
-                print(f"Binance API error for {symbol}: {response.status_code}")
+                print(f"  ❌ Binance API error for {symbol}: {response.status_code}")
+                print(f"  Response: {response.text[:200]}")
                 return None
 
         except Exception as e:
-            print(f"Error fetching Binance price for {symbol}: {e}")
+            print(f"  ❌ Exception fetching Binance price for {symbol}: {e}")
+            import traceback
+            traceback.print_exc()
             return None
 
     def add_asset(self, pair):
