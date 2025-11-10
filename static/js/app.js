@@ -45,8 +45,7 @@ class CryptoAlarmClient {
         });
 
         this.socket.on('asset_adding', (data) => {
-            this.updateStatus('Adding ' + data.pair + '... (5-10 seconds)', '');
-            this.showError('Fetching data from CoinGecko API... Please wait (this takes 5-10 seconds due to rate limiting)');
+            this.updateStatus('Adding ' + data.pair + '...', '');
         });
 
         this.socket.on('asset_added', (data) => {
@@ -238,7 +237,8 @@ class CryptoAlarmClient {
             return;
         }
 
-        this.updateStatus('Fetching pair info...', '');
+        this.updateStatus('Adding pair...', '');
+        this.clearError();
         this.socket.emit('add_asset', { pair: pair });
     }
 
