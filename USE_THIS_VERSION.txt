@@ -1,0 +1,57 @@
+🔧 IMPORTANT: Use the FIXED version!
+
+The main issue was that adding trading pairs was blocking the WebSocket connection for 5-10 seconds, causing disconnections.
+
+✅ USE THIS FILE:
+    python app_fixed.py
+
+❌ DON'T USE:
+    python app.py  (old version with timeout issues)
+
+---
+
+WHAT WAS FIXED:
+
+1. ✅ Async asset loading - adding pairs no longer blocks the WebSocket
+2. ✅ Better WebSocket timeout settings (60 second ping timeout)
+3. ✅ Immediate feedback when adding pairs ("Please wait 5-10 seconds...")
+4. ✅ Threading mode for better concurrency
+
+---
+
+HOW TO USE:
+
+1. Pull the latest code:
+   git pull origin main
+
+2. Activate virtual environment:
+   Windows: venv\Scripts\activate
+   Mac/Linux: source venv/bin/activate
+
+3. Run the FIXED version:
+   python app_fixed.py
+
+4. Open browser:
+   http://localhost:5000
+
+5. Add a pair (e.g., BTCUSDT):
+   - You'll see "Fetching data... Please wait 5-10 seconds"
+   - The connection will stay active
+   - After 5-10 seconds, the pair will appear
+
+6. Wait 10 seconds before adding another pair!
+
+---
+
+WHY IT TAKES 5-10 SECONDS:
+
+CoinGecko's free API requires:
+- 2 second delay between each API call
+- Adding a pair makes 2-3 API calls
+- Total time: 4-10 seconds
+
+This is normal and expected with the free API!
+
+---
+
+If you still have issues, check TROUBLESHOOTING.md
