@@ -8,7 +8,7 @@ import time
 import json
 import os
 from datetime import datetime
-from threading import Thread, Lock
+from threading import Thread, RLock
 import uuid
 
 
@@ -18,7 +18,7 @@ class CryptoMonitorBinance:
         self.assets = {}
         self.alarms = {}
         self.price_history = {}
-        self.lock = Lock()
+        self.lock = RLock()
         self.monitoring = False
         self.monitor_thread = None
         self.price_update_callback = None
@@ -90,62 +90,76 @@ class CryptoMonitorBinance:
 
     def add_asset(self, pair):
         """Add a new trading pair to monitor"""
-        pair = pair.strip().upper()
+        try:
+            pair = pair.strip().upper()
+            print(f"  Step 1: Cleaned pair = {pair}")
 
-        if not pair:
-            return {'success': False, 'message': 'Please enter a trading pair'}
+            if not pair:
+                return {'success': False, 'message': 'Please enter a trading pair'}
 
-        if pair in self.assets:
-            return {'success': False, 'message': 'Pair already added'}
+            if pair in self.assets:
+                return {'success': False, 'message': 'Pair already added'}
 
-        print(f"Fetching {pair} from Binance...")
+            print(f"Fetching {pair} from Binance...")
 
-        # Try to fetch the price
-        price_data = self.fetch_binance_price(pair)
+            # Try to fetch the price
+            price_data = self.fetch_binance_price(pair)
+            print(f"  Step 2: Got price_data = {price_data is not None}")
 
-        if not price_data:
-            return {
-                'success': False,
-                'message': f'Pair {pair} not found on Binance. Try: BTCUSDT, ETHUSDT, BNBUSDT, etc.'
+            if not price_data:
+                return {
+                    'success': False,
+                    'message': f'Pair {pair} not found on Binance. Try: BTCUSDT, ETHUSDT, BNBUSDT, etc.'
+                }
+
+            # Parse the pair to get base and quote
+            print(f"  Step 3: Parsing pair...")
+            # Common quote currencies
+            quotes = ['USDT', 'USDC', 'BUSD', 'BTC', 'ETH', 'BNB', 'EUR', 'GBP']
+            base = None
+            quote = None
+
+            for q in quotes:
+                if pair.endswith(q) and len(pair) > len(q):
+                    base = pair[:-len(q)]
+                    quote = q
+                    break
+
+            print(f"  Step 4: Parsed - base={base}, quote={quote}")
+
+            if not base or not quote:
+                return {'success': False, 'message': 'Could not parse trading pair'}
+
+            # Create asset
+            print(f"  Step 5: Creating asset dict...")
+            asset = {
+                'ticker': pair,
+                'base': base,
+                'quote': quote,
+                'name': f"{base}/{quote}",
+                'price': price_data['price'],
+                'change24h': price_data['change24h'],
+                'maxPrice': price_data['price'],
+                'minPrice': price_data['price'],
+                'high24h': price_data['high24h'],
+                'low24h': price_data['low24h'],
+                'lastUpdate': time.time()
             }
 
-        # Parse the pair to get base and quote
-        # Common quote currencies
-        quotes = ['USDT', 'USDC', 'BUSD', 'BTC', 'ETH', 'BNB', 'EUR', 'GBP']
-        base = None
-        quote = None
+            print(f"  Step 6: Saving to storage...")
+            with self.lock:
+                self.assets[pair] = asset
+                self.price_history[pair] = [{'price': price_data['price'], 'timestamp': time.time()}]
+                self.save_data()
 
-        for q in quotes:
-            if pair.endswith(q) and len(pair) > len(q):
-                base = pair[:-len(q)]
-                quote = q
-                break
+            print(f"✅ Successfully added {pair}: ${price_data['price']}")
+            return {'success': True, 'asset': asset}
 
-        if not base or not quote:
-            return {'success': False, 'message': 'Could not parse trading pair'}
-
-        # Create asset
-        asset = {
-            'ticker': pair,
-            'base': base,
-            'quote': quote,
-            'name': f"{base}/{quote}",
-            'price': price_data['price'],
-            'change24h': price_data['change24h'],
-            'maxPrice': price_data['price'],
-            'minPrice': price_data['price'],
-            'high24h': price_data['high24h'],
-            'low24h': price_data['low24h'],
-            'lastUpdate': time.time()
-        }
-
-        with self.lock:
-            self.assets[pair] = asset
-            self.price_history[pair] = [{'price': price_data['price'], 'timestamp': time.time()}]
-            self.save_data()
-
-        print(f"✅ Successfully added {pair}: ${price_data['price']}")
-        return {'success': True, 'asset': asset}
+        except Exception as e:
+            print(f"  ❌ Exception in add_asset: {e}")
+            import traceback
+            traceback.print_exc()
+            return {'success': False, 'message': f'Error: {str(e)}'}
 
     def remove_asset(self, ticker):
         """Remove a trading pair"""
