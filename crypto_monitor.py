@@ -23,7 +23,7 @@ class CryptoMonitor:
         self.price_update_callback = None
         self.alarm_callback = None
         self.last_api_call = 0
-        self.min_api_delay = 1.2  # seconds
+        self.min_api_delay = 2.0  # Increased to 2 seconds to avoid rate limits
         self.reset_timers = {}  # For alarm reset cooldowns
 
         # Supported quote currencies
@@ -97,9 +97,9 @@ class CryptoMonitor:
             response = requests.get(url, timeout=10)
 
             if response.status_code == 429:
-                print('Rate limited. Waiting 60 seconds...')
-                time.sleep(60)
-                return self.fetch_coin_id(ticker)
+                print(f'⚠️  Rate limited by CoinGecko API for ticker: {ticker}')
+                print('   Please wait a minute before trying again.')
+                return None
 
             data = response.json()
 
@@ -126,9 +126,9 @@ class CryptoMonitor:
             response = requests.get(url, timeout=10)
 
             if response.status_code == 429:
-                print('Rate limited. Waiting 60 seconds...')
-                time.sleep(60)
-                return self.fetch_price(coin_id)
+                print(f'⚠️  Rate limited by CoinGecko API for coin: {coin_id}')
+                print('   Please wait a minute before trying again.')
+                return None
 
             data = response.json()
 
@@ -153,9 +153,9 @@ class CryptoMonitor:
             response = requests.get(url, timeout=10)
 
             if response.status_code == 429:
-                print('Rate limited. Waiting 60 seconds...')
-                time.sleep(60)
-                return self.fetch_pair_price(base_coin_id, quote_coin_id)
+                print(f'⚠️  Rate limited by CoinGecko API for pair: {base_coin_id}/{quote_coin_id}')
+                print('   Please wait a minute before trying again.')
+                return None
 
             data = response.json()
 
@@ -195,7 +195,7 @@ class CryptoMonitor:
         # Fetch base asset info
         base_coin_info = self.fetch_coin_id(base)
         if not base_coin_info:
-            return {'success': False, 'message': f'Base asset "{base}" not found'}
+            return {'success': False, 'message': f'Could not fetch "{base}". Either invalid symbol or API rate limited. Wait 1-2 minutes and try again.'}
 
         # Handle quote asset
         quote_coin_info = None
@@ -208,12 +208,12 @@ class CryptoMonitor:
             # For non-stablecoin pairs, fetch both assets
             quote_coin_info = self.fetch_coin_id(quote)
             if not quote_coin_info:
-                return {'success': False, 'message': f'Quote asset "{quote}" not found'}
+                return {'success': False, 'message': f'Could not fetch "{quote}". Either invalid symbol or API rate limited. Wait 1-2 minutes and try again.'}
 
             price_data = self.fetch_pair_price(base_coin_info['id'], quote_coin_info['id'])
 
         if not price_data:
-            return {'success': False, 'message': 'Could not fetch price data'}
+            return {'success': False, 'message': 'Could not fetch price data. API may be rate limited. Wait 1-2 minutes and try again.'}
 
         # Create asset
         asset = {
