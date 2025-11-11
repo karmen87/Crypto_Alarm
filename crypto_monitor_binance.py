@@ -218,6 +218,12 @@ class CryptoMonitorBinance:
     def add_timeframe_alarm(self, ticker, percentage, direction, time_value, time_unit):
         """Add a timeframe percentage alarm"""
         alarm_id = str(uuid.uuid4())
+
+        # Get current price as start price
+        start_price = None
+        if ticker in self.assets:
+            start_price = self.assets[ticker]['price']
+
         alarm = {
             'id': alarm_id,
             'ticker': ticker,
@@ -228,7 +234,8 @@ class CryptoMonitorBinance:
             'timeUnit': time_unit,
             'triggered': False,
             'createdAt': time.time(),
-            'lastResetTime': time.time()
+            'lastResetTime': time.time(),
+            'startPrice': start_price  # Add start price for frontend calculation
         }
 
         with self.lock:
@@ -341,6 +348,7 @@ class CryptoMonitorBinance:
                     if alarm['type'] == 'timeframe' and alarm['timeUnit'] == 'since_start':
                         with self.lock:
                             self.alarms[alarm_id]['lastResetTime'] = time.time()
+                            self.alarms[alarm_id]['startPrice'] = asset['price']  # Reset start price
                             self.save_data()
                     else:
                         with self.lock:
@@ -440,6 +448,10 @@ class CryptoMonitorBinance:
             return False, None
 
         start_price = relevant_history[0]['price']
+
+        # Update the alarm's startPrice for frontend display
+        alarm['startPrice'] = start_price
+
         current_price = asset['price']
         percent_change = ((current_price - start_price) / start_price) * 100
 
