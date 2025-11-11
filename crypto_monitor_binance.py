@@ -371,32 +371,57 @@ class CryptoMonitorBinance:
     def check_target_alarm(self, alarm, asset):
         """Check if target price alarm should trigger"""
         current_price = asset['price']
-        target_price = alarm['targetPrice']
-        eps = max(1e-8, abs(target_price) * 1e-6)
+        target_price = float(alarm['targetPrice'])  # Ensure float
 
         ticker = alarm['ticker']
         history = self.price_history.get(ticker, [])
 
-        if len(history) < 2:
+        # Check if this is the first time checking this alarm
+        alarm_age = time.time() - alarm['createdAt']
+        is_first_check = alarm_age < 15  # Within first 15 seconds
+
+        # For new alarms, check if current price already meets condition
+        if is_first_check and len(history) < 3:
+            print(f"  🔔 New alarm first check: {ticker} current=${current_price:.2f}, target=${target_price:.2f}, direction={alarm['direction']}")
             if alarm['direction'] == 'up':
-                return current_price + eps >= target_price, 'up'
+                if current_price >= target_price:
+                    print(f"  ✅ TRIGGERING: price already above target!")
+                    return True, 'up'
             elif alarm['direction'] == 'down':
-                return current_price - eps <= target_price, 'down'
+                if current_price <= target_price:
+                    print(f"  ✅ TRIGGERING: price already below target!")
+                    return True, 'down'
             else:
-                return abs(current_price - target_price) <= eps, None
+                if abs(current_price - target_price) / target_price < 0.001:  # Within 0.1%
+                    print(f"  ✅ TRIGGERING: price at target!")
+                    return True, 'up' if current_price >= target_price else 'down'
+            return False, None
+
+        # Need at least 2 price points for crossing detection
+        if len(history) < 2:
+            return False, None
 
         previous_price = history[-2]['price']
 
+        # Check for crossing
         if alarm['direction'] == 'up':
-            if previous_price < target_price and current_price + eps >= target_price:
+            # Trigger if price crossed from below target to at/above target
+            if previous_price < target_price and current_price >= target_price:
+                print(f"  🎯 {ticker} UP alarm triggered: ${previous_price:.2f} -> ${current_price:.2f} crossed target ${target_price:.2f}")
                 return True, 'up'
         elif alarm['direction'] == 'down':
-            if previous_price > target_price and current_price - eps <= target_price:
+            # Trigger if price crossed from above target to at/below target
+            if previous_price > target_price and current_price <= target_price:
+                print(f"  🎯 {ticker} DOWN alarm triggered: ${previous_price:.2f} -> ${current_price:.2f} crossed target ${target_price:.2f}")
                 return True, 'down'
-        else:
-            if (previous_price < target_price and current_price + eps >= target_price) or \
-               (previous_price > target_price and current_price - eps <= target_price):
-                return True, 'up' if current_price >= target_price else 'down'
+        else:  # either direction
+            # Trigger if price crossed target in either direction
+            if (previous_price < target_price and current_price >= target_price):
+                print(f"  🎯 {ticker} EITHER alarm triggered UP: ${previous_price:.2f} -> ${current_price:.2f} crossed target ${target_price:.2f}")
+                return True, 'up'
+            elif (previous_price > target_price and current_price <= target_price):
+                print(f"  🎯 {ticker} EITHER alarm triggered DOWN: ${previous_price:.2f} -> ${current_price:.2f} crossed target ${target_price:.2f}")
+                return True, 'down'
 
         return False, None
 
