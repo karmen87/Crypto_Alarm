@@ -76,6 +76,8 @@ class CryptoAlarmClient {
                 this.renderAlarms();
             }
             this.renderAllActiveAlarms();
+            // Update asset list to refresh alarm counts
+            this.renderAssets();
         });
 
         this.socket.on('alarm_restarted', (data) => {
