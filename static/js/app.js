@@ -381,6 +381,58 @@ class CryptoAlarmClient {
         });
     }
 
+    calculatePercentToTrigger(alarm, asset) {
+        if (!asset) return 'N/A';
+
+        const currentPrice = asset.price;
+
+        switch (alarm.type) {
+            case 'target':
+                const targetPrice = parseFloat(alarm.targetPrice);
+                const percentDiff = ((targetPrice - currentPrice) / currentPrice) * 100;
+                return percentDiff.toFixed(2) + '%';
+
+            case 'extreme':
+                const percentage = parseFloat(alarm.percentage);
+                if (alarm.extremeType === 'max') {
+                    // Alarm triggers when price drops X% from max
+                    const maxPrice = asset.maxPrice || currentPrice;
+                    const currentDropPercent = ((maxPrice - currentPrice) / maxPrice) * 100;
+                    const remainingDrop = percentage - currentDropPercent;
+                    return remainingDrop.toFixed(2) + '%';
+                } else {
+                    // Alarm triggers when price rises X% from min
+                    const minPrice = asset.minPrice || currentPrice;
+                    const currentRisePercent = ((currentPrice - minPrice) / minPrice) * 100;
+                    const remainingRise = percentage - currentRisePercent;
+                    return remainingRise.toFixed(2) + '%';
+                }
+
+            case 'timeframe':
+                // For timeframe alarms, we need the start price from the alarm
+                if (alarm.startPrice) {
+                    const percentage = parseFloat(alarm.percentage);
+                    const currentChange = ((currentPrice - alarm.startPrice) / alarm.startPrice) * 100;
+
+                    if (alarm.direction === 'up') {
+                        const remaining = percentage - currentChange;
+                        return remaining.toFixed(2) + '%';
+                    } else if (alarm.direction === 'down') {
+                        const remaining = percentage + currentChange;
+                        return remaining.toFixed(2) + '%';
+                    } else {
+                        const absChange = Math.abs(currentChange);
+                        const remaining = percentage - absChange;
+                        return remaining.toFixed(2) + '%';
+                    }
+                }
+                return 'N/A';
+
+            default:
+                return 'N/A';
+        }
+    }
+
     renderAllActiveAlarms() {
         const tbody = document.querySelector('#allAlarmsTable tbody');
         tbody.innerHTML = '';
@@ -403,11 +455,12 @@ class CryptoAlarmClient {
 
             alarms.forEach((alarm, index) => {
                 const row = document.createElement('tr');
+                const percentToTrigger = this.calculatePercentToTrigger(alarm, asset);
 
                 row.innerHTML = `
                     <td>${index === 0 ? asset.name : ''}</td>
                     <td>${this.getAlarmDescription(alarm)}</td>
-                    <td>N/A</td>
+                    <td>${percentToTrigger}</td>
                     <td>
                         <button class="btn-small btn-danger" onclick="app.removeAlarm('${alarm.id}')">Remove</button>
                     </td>
