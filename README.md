@@ -2,6 +2,15 @@
 
 A reliable web application for tracking cryptocurrency trading pairs and receiving alarm notifications when specific price events occur.
 
+## Project Structure
+
+This repository contains two separate implementations of the Crypto Price Alarm:
+
+- **`javascript-app/`** - Standalone JavaScript application (client-side only, no server required)
+- **`python-app/`** - Flask-based Python application (server-side with WebSocket support)
+
+Both applications provide the same core functionality but use different technologies. Choose the one that best fits your needs.
+
 ## Features
 
 - **Trading Pair Support**: Monitor any trading pair available on CoinGecko (BTCUSDT, ETHBTC, etc.)
@@ -19,10 +28,21 @@ A reliable web application for tracking cryptocurrency trading pairs and receivi
 
 ## How to Use
 
-### Getting Started
+### JavaScript App (Recommended for simplicity)
 
-1. Open `index.html` in your web browser
-2. The app will start monitoring immediately
+1. Navigate to the `javascript-app/` folder
+2. Open `index.html` in your web browser
+3. The app will start monitoring immediately
+
+### Python App (For advanced features)
+
+1. Navigate to the `python-app/` folder
+2. Follow the instructions in `python-app/PYTHON_SETUP.md`
+3. Run the Flask server and access via web browser
+
+---
+
+The following instructions apply to both applications:
 
 ### Adding Trading Pairs
 
@@ -84,11 +104,21 @@ A reliable web application for tracking cryptocurrency trading pairs and receivi
 
 ## Technical Details
 
+### JavaScript App
 - **No Installation Required**: Pure HTML/CSS/JavaScript
+- **No Server Needed**: Runs entirely in the browser
+- **Data Persistence**: Uses LocalStorage to save configuration
+- **Update Interval**: 15 seconds (can be adjusted in `app.js`)
+
+### Python App
+- **Backend**: Flask with Socket.IO for real-time updates
+- **Data Persistence**: JSON file storage
+- **Update Interval**: Configurable via backend
+- **Additional Features**: Server-side monitoring and logging
+
+### Both Apps
 - **No API Key Needed**: Uses CoinGecko's free public API
 - **Browser Compatibility**: Works in all modern browsers with Web Audio API support
-- **Update Interval**: 15 seconds (can be adjusted in `app.js`)
-- **Data Persistence**: Uses LocalStorage to save configuration
 - **Price History**: Keeps 24 hours of price data for timeframe calculations
 - **Pair Calculation**: For stablecoin pairs, uses USD as proxy; for others, calculates ratio between base and quote
 

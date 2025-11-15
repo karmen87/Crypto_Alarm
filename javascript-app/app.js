@@ -26,7 +26,7 @@ class CryptoPriceAlarm {
             this.alarmSoundPlaying = false;
         // Rate limiting for API calls
         this.lastApiCall = 0;
-        this.minApiDelay = 1200; // Minimum 1.2 seconds between API calls (50 calls/minute max)
+        this.minApiDelay = 2000; // Minimum 2 seconds between API calls (30 calls/minute max, safer for free tier)
         this.apiQueue = [];
         this.isProcessingQueue = false;
 
@@ -700,7 +700,7 @@ class CryptoPriceAlarm {
     }
 
     startMonitoring() {
-        // Update prices every 15 seconds
+        // Update prices every 10 seconds
         this.updateInterval = setInterval(async () => {
             await this.updateAllPrices();
             this.checkAlarms();
@@ -708,7 +708,7 @@ class CryptoPriceAlarm {
             if (this.currentView === 'alarms' && this.selectedAsset) {
                 this.renderAlarms();
             }
-        }, 15000);
+        }, 10000);
     }
 
     stopMonitoring() {
