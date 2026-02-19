@@ -1,0 +1,12 @@
+baseURL = 'https://karmen87.github.io/Crypto_Alarm/'
+languageCode = 'en-us'
+title = 'Crypto Price Alarm | Technical Documentation'
+theme = 'hugo-theme-relearn'
+
+[params]
+themeVariant = 'relearn-dark'
+
+[[menu.main]]
+name = 'GitHub Repo'
+url = 'https://github.com/karmen87/Crypto_Alarm'
+weight = 10
