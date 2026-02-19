@@ -17,6 +17,7 @@ instance/
 
 # Data files
 data/crypto_data.json
+python-app/data/crypto_data_binance.json
 
 # IDE
 .vscode/
@@ -24,6 +25,7 @@ data/crypto_data.json
 *.swp
 *.swo
 *~
+.claude/settings.local.json
 
 # OS
 .DS_Store
