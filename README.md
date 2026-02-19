@@ -1,189 +1,205 @@
 # Crypto Price Alarm
 
-A reliable web application for tracking cryptocurrency trading pairs and receiving alarm notifications when specific price events occur.
+> A reliable web application for tracking cryptocurrency trading pairs and receiving real-time alarm notifications when specific price events occur.
 
-## Project Structure
-
-This repository contains two separate implementations of the Crypto Price Alarm:
-
-- **`javascript-app/`** - Standalone JavaScript application (client-side only, no server required)
-- **`python-app/`** - Flask-based Python application (server-side with WebSocket support)
-
-Both applications provide the same core functionality but use different technologies. Choose the one that best fits your needs.
-
-## Features
-
-- **Trading Pair Support**: Monitor any trading pair available on CoinGecko (BTCUSDT, ETHBTC, etc.)
-- **Multi-Pair Tracking**: Monitor multiple trading pairs simultaneously
-- **Real-Time Price Updates**: Prices update every 15 seconds using CoinGecko API
-- **Three Alarm Types**:
-  1. **Target Price**: Alert when price reaches a specific value (from above, below, or any direction)
-  2. **% Change from Max/Min**: Alert when price moves a certain percentage from its maximum or minimum
-  3. **% Move in Timeframe**: Alert when price moves a certain percentage within a specified time period
-- **Continuous Alarm Sound**: Audible alerts that play until manually dismissed
-- **Persistent Storage**: All settings and alarms are saved in your browser
-- **Clean, Minimal Design**: Intuitive interface focused on functionality
-- **Reliable Monitoring**: Continuous background monitoring with status indicator
-- **Smart Price Formatting**: Automatic decimal precision based on pair type
-
-## How to Use
-
-### JavaScript App (Recommended for simplicity)
-
-1. Navigate to the `javascript-app/` folder
-2. Open `index.html` in your web browser
-3. The app will start monitoring immediately
-
-### Python App (For advanced features)
-
-1. Navigate to the `python-app/` folder
-2. Follow the instructions in `python-app/PYTHON_SETUP.md`
-3. Run the Flask server and access via web browser
+[![Build & Deploy](https://github.com/karmen87/Crypto_Alarm/actions/workflows/deploy.yml/badge.svg)](https://github.com/karmen87/Crypto_Alarm/actions/workflows/deploy.yml)
+[![Documentation](https://img.shields.io/badge/docs-hugo-blue.svg)](https://karmen87.github.io/Crypto_Alarm/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
 
-The following instructions apply to both applications:
+## 📚 Documentation
 
-### Adding Trading Pairs
+**[📖 Read the Full Documentation →](https://karmen87.github.io/Crypto_Alarm/)**
 
-1. Enter a trading pair (e.g., BTCUSDT, ETHBTC, BNBETH) in the "Add Trading Pair" field
-2. Click "Add Pair" or press Enter
-3. The app will fetch the current price and display the pair
+Comprehensive technical documentation including:
+- Detailed implementation guides for JavaScript and Python versions
+- In-depth alarm logic explanations
+- API integration specifics
+- DevOps and CI/CD setup
 
-**Supported Quote Currencies**: USDT, USDC, USD, BUSD, DAI, BTC, ETH, BNB, EUR, GBP
+---
 
-**Examples**:
-- `BTCUSDT` - Bitcoin priced in Tether (stablecoin)
-- `ETHBTC` - Ethereum priced in Bitcoin
-- `BNBETH` - Binance Coin priced in Ethereum
-- `SOLUSDC` - Solana priced in USD Coin
+## 🚀 Quick Start
 
-### Configuring Alarms
+### JavaScript App (Recommended - No Installation Required)
 
-1. Click the "Alarms" button on any trading pair
-2. Choose from three alarm types:
+```bash
+# Clone the repository
+git clone https://github.com/karmen87/Crypto_Alarm.git
 
-   **Target Price Alert**
-   - Enter a target price (in the quote currency of the pair)
-   - Example: For BTCUSDT, enter price in USDT (e.g., 50000)
-   - Example: For ETHBTC, enter price in BTC (e.g., 0.055)
-   - Choose direction: any, from below (going up), or from above (going down)
-   - Click "Add"
+# Navigate to the JavaScript app
+cd Crypto_Alarm/javascript-app
 
-   **% Change from Max/Min**
-   - Enter the percentage change threshold
-   - Choose: % down from max or % up from min
-   - Click "Add"
+# Open in browser
+open index.html  # macOS
+# or just double-click index.html in Windows/Linux
+```
 
-   **% Move in Timeframe**
-   - Enter the percentage change threshold
-   - Choose direction: any, upward, or downward
-   - Enter the time value and select unit:
-     - **Minutes**: Short-term movements (e.g., 5% in 15 minutes)
-     - **Hours**: Medium-term movements (e.g., 10% in 2 hours)
-     - **Days**: Long-term movements (e.g., 20% in 3 days)
-     - **Since start**: Tracks % move from when the alarm was created/last triggered
-       - This alarm automatically resets after triggering and continues monitoring
-       - No time value needed for this option
-   - Click "Add"
+**That's it!** No server, no dependencies, no configuration needed.
 
-3. Click "Back to Assets" to return to the main view
+### Python App (Advanced Features)
 
-### When an Alarm Triggers
+```bash
+# Navigate to Python app
+cd Crypto_Alarm/python-app
 
-1. A modal will appear with alarm details
-2. A continuous alarm sound will play
-3. Click "DISMISS ALARM" to stop the sound and close the notification
-4. Triggered alarms will be marked in the alarms list
+# Follow setup instructions
+See python-app/PYTHON_SETUP.md
+```
 
-### Managing Pairs and Alarms
+---
 
-- **Remove Pair**: Click the "Remove" button on any pair (this also removes all associated alarms)
-- **Remove Alarm**: In the alarms view, click "Remove" on any individual alarm
-- **View Alarm Count**: Each pair shows the number of configured alarms
+## ✨ Features
 
-## Technical Details
+### Core Capabilities
+- 📊 **Multi-Pair Tracking** - Monitor multiple cryptocurrency trading pairs simultaneously
+- ⏱️ **Real-Time Updates** - Price updates every 15 seconds via CoinGecko API
+- 🔔 **Smart Alarms** - Three configurable alarm types for different trading strategies
+- 💾 **Persistent Storage** - All settings saved automatically
+- 🎨 **Clean Interface** - Minimal design focused on functionality
+
+### Three Alarm Types
+
+1. **🎯 Target Price** - Alert when price reaches a specific value
+   - Configure direction: from above, below, or any direction
+
+2. **📈 % Change from Max/Min** - Track percentage moves from extremes
+   - Set alerts for pullbacks or breakouts
+
+3. **⏰ % Move in Timeframe** - Monitor price action over time periods
+   - Configure minutes, hours, days, or "since start"
+
+### Supported Trading Pairs
+
+Any pair with these quote currencies: **USDT**, **USDC**, **USD**, **BUSD**, **DAI**, **BTC**, **ETH**, **BNB**, **EUR**, **GBP**
+
+**Examples**: `BTCUSDT`, `ETHBTC`, `BNBETH`, `SOLUSDC`
+
+---
+
+## 📂 Project Structure
+
+```
+Crypto_Alarm/
+├── javascript-app/       # Standalone browser-based app (no server)
+│   ├── index.html
+│   ├── app.js
+│   └── styles.css
+├── python-app/           # Flask + WebSocket server application
+│   ├── app.py
+│   ├── requirements.txt
+│   └── templates/
+├── docs/                 # Hugo documentation site
+│   └── content/
+└── .github/
+    └── workflows/        # CI/CD automation
+```
+
+---
+
+## 🎯 Use Cases
+
+### Day Trading
+- Set 3-5% quick movement alarms in 15-30 minute windows
+- Monitor multiple pairs for volatility spikes
+
+### Swing Trading
+- Track % moves over hours/days
+- Set target price alerts for key resistance levels
+
+### Portfolio Monitoring
+- Set "% down from max" stop-loss alerts
+- Monitor long-term holdings for significant moves
+
+---
+
+## 🔧 Technical Stack
 
 ### JavaScript App
-- **No Installation Required**: Pure HTML/CSS/JavaScript
-- **No Server Needed**: Runs entirely in the browser
-- **Data Persistence**: Uses LocalStorage to save configuration
-- **Update Interval**: 15 seconds (can be adjusted in `app.js`)
+- Pure HTML/CSS/JavaScript (no frameworks)
+- LocalStorage for persistence
+- Web Audio API for alarms
+- **No backend required**
 
 ### Python App
-- **Backend**: Flask with Socket.IO for real-time updates
-- **Data Persistence**: JSON file storage
-- **Update Interval**: Configurable via backend
-- **Additional Features**: Server-side monitoring and logging
+- Flask web framework
+- Socket.IO for real-time updates
+- JSON file storage
+- Server-side monitoring
 
-### Both Apps
-- **No API Key Needed**: Uses CoinGecko's free public API
-- **Browser Compatibility**: Works in all modern browsers with Web Audio API support
-- **Price History**: Keeps 24 hours of price data for timeframe calculations
-- **Pair Calculation**: For stablecoin pairs, uses USD as proxy; for others, calculates ratio between base and quote
+### Documentation Site
+- Hugo static site generator
+- Relearn theme
+- Automated deployment via GitHub Actions
 
-## Tips for Best Results
+---
 
-1. **Keep the tab visible**: IMPORTANT - For the most reliable alarm sound, keep the browser tab visible or use a separate window. Browser audio contexts can be suspended when tabs are inactive for extended periods.
-2. **Allow audio**: Make sure your browser allows audio playback from the page. Click the "🔔 Test Alarm" button to verify sound works.
-3. **Check system volume**: The alarm plays at 60% volume. Ensure your system volume is adequate.
-4. **Visual alerts**: Even if you can't hear the sound, the page title will flash "🚨 ALARM TRIGGERED! 🚨" when an alarm fires.
-5. **Stable connection**: Ensure a stable internet connection for reliable price updates
-6. **Reasonable thresholds**: Set alarm thresholds that account for normal price volatility
-7. **Test before relying**: Use the test alarm button to verify everything works before setting important alarms
-8. **Check pair format**: Ensure the quote currency is one of the supported currencies
+## ⚠️ Important Notes
 
-## Alarm Examples
+### For JavaScript App Users
+**Keep browser tab visible** - Browsers may suspend audio for inactive tabs. For reliable alarms:
+- ✅ Keep the tab visible (not minimized)
+- ✅ Use a dedicated browser window for monitoring
+- ℹ️ Visual backup: Page title flashes "🚨 ALARM TRIGGERED! 🚨"
 
-**For BTCUSDT (stablecoin pair)**:
-- **Bull Run Alert**: Target price 60000 with "from below" direction
-- **Stop Loss**: 10% down from max
-- **Quick Pump**: 3% up in 30 minutes
-- **Hourly Volatility**: 5% move (any direction) in 2 hours
-- **Daily Target**: 15% up in 1 day
-- **Session Tracker**: 8% move since start (resets on trigger)
+**Test first** - Click "🔔 Test Alarm" to verify sound works before setting critical alarms.
 
-**For ETHBTC (crypto pair)**:
-- **Breaking Resistance**: Target price 0.06 with "from below" direction
-- **Ratio Drop Alert**: 5% down from max
-- **Short-term Spike**: 2% move (any direction) in 15 minutes
-- **Trending Move**: 10% up in 4 hours
-- **Swing Trading**: 5% move since start (resets after each trigger)
+### Privacy
+All data is stored locally in your browser (JavaScript) or on your server (Python). No information is sent anywhere except CoinGecko API requests for price data.
 
-**Max/Min Tracking Note**:
-- Max/Min prices are tracked from the moment you add the pair
-- They persist across app restarts (saved in browser storage)
-- Reset only when you remove and re-add the pair
+---
 
-## Limitations
+## 📖 Documentation & Resources
 
-- Relies on CoinGecko API availability and rate limits
-- Price updates occur every 15 seconds (not real-time tick data)
-- Max/min prices reset when you remove and re-add a pair
-- Timeframe alarms require sufficient price history
-- Both assets in the pair must be available on CoinGecko
-- Quote currency must be one of the supported currencies
+- **[Full Documentation](https://karmen87.github.io/Crypto_Alarm/)** - Complete technical guides
+- **[JavaScript Implementation](https://karmen87.github.io/Crypto_Alarm/implementations/javascript-app/)** - Client-side app details
+- **[Python Implementation](https://karmen87.github.io/Crypto_Alarm/implementations/python-app/)** - Server-side app details
+- **[Alarm Logic Deep Dive](https://karmen87.github.io/Crypto_Alarm/alarm-logic/)** - How alarms work
+- **[API Integration](https://karmen87.github.io/Crypto_Alarm/api-integration/)** - CoinGecko integration guide
 
-## Troubleshooting
+---
 
-**Invalid pair format**: Make sure the pair ends with a supported quote currency (USDT, BTC, ETH, etc.)
+## 🐛 Troubleshooting
 
-**Base asset not found**: Verify the base token symbol exists on CoinGecko
+**Common Issues:**
 
-**Quote asset not found**: Ensure quote currency is spelled correctly and supported
+| Issue | Solution |
+|-------|----------|
+| Invalid pair format | Ensure pair ends with supported quote currency (USDT, BTC, ETH, etc.) |
+| No alarm sound | Check browser audio permissions; keep tab visible (JS version) |
+| Base asset not found | Verify token symbol exists on CoinGecko |
+| Prices not updating | Check internet connection and browser console |
 
-**No alarm sound / Sound stops playing**:
-- Check browser audio permissions and system volume
-- Keep the browser tab VISIBLE - browser suspends audio for inactive tabs
-- Look for the flashing page title "🚨 ALARM TRIGGERED! 🚨" as a visual backup
-- Open browser console (F12) and check for audio context warnings
-- Use the "🔔 Test Alarm" button to verify audio is working
-- If tab was inactive for a long time, the audio context may have been suspended
+**[📋 Full Troubleshooting Guide →](https://karmen87.github.io/Crypto_Alarm/)**
 
-**Prices not updating**: Check internet connection and browser console for errors
+---
 
-**Alarms not triggering**: Verify alarm conditions are possible with current price action
+## 🤝 Contributing
 
-## Privacy
+Contributions are welcome! Please feel free to submit issues or pull requests.
 
-All data is stored locally in your browser. No information is sent to any server except API requests to CoinGecko for price data.
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 👤 Author
+
+**Karmen Kardum**
+- GitHub: [@karmen87](https://github.com/karmen87)
+- Portfolio: [karmen87.github.io](https://karmen87.github.io/)
+
+---
+
+## 🙏 Acknowledgments
+
+- Powered by [CoinGecko API](https://www.coingecko.com/en/api) for cryptocurrency price data
+- Documentation built with [Hugo](https://gohugo.io/) and the [Relearn theme](https://mcshelby.github.io/hugo-theme-relearn/)
+
+---
+
+**[📖 View Full Documentation](https://karmen87.github.io/Crypto_Alarm/)** | **[🐛 Report Issues](https://github.com/karmen87/Crypto_Alarm/issues)** | **[⭐ Star this repo](https://github.com/karmen87/Crypto_Alarm)**
