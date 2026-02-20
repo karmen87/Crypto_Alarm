@@ -69,6 +69,11 @@ jobs:
         working-directory: docs
         run: hugo --minify
 
+      - name: Copy JavaScript app to deployment
+        run: |
+          mkdir -p ./docs/public/app
+          cp -r ./javascript-app/* ./docs/public/app/
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
