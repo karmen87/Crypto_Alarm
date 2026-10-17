@@ -34,3 +34,8 @@ Thumbs.db
 .mypy_cache/
 .ruff_cache/
 .pytest_cache/
+
+# Hugo build output
+docs/public/
+docs/resources/
+docs/.hugo_build.lock
