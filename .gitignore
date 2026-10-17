@@ -1,4 +1,4 @@
-# Python
+﻿# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -16,7 +16,7 @@ instance/
 .webassets-cache
 
 # Data files
-data/crypto_data.json
+data/
 
 # IDE
 .vscode/
@@ -28,3 +28,9 @@ data/crypto_data.json
 # OS
 .DS_Store
 Thumbs.db
+
+# Local config and tool caches
+.env
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/

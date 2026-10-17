@@ -1,159 +1,94 @@
 # Crypto Price Alarm
 
-A reliable web application for tracking cryptocurrency trading pairs and receiving alarm notifications when specific price events occur.
+Monitors Binance trading pairs and raises alarms on price events, in the browser and, optionally,
+on your phone. Python (Flask + Socket.IO) backend, dependency-free browser UI. Uses Binance's
+public market-data API, so no API key is needed.
 
-## Features
+## Quick start
 
-- **Trading Pair Support**: Monitor any trading pair available on CoinGecko (BTCUSDT, ETHBTC, etc.)
-- **Multi-Pair Tracking**: Monitor multiple trading pairs simultaneously
-- **Real-Time Price Updates**: Prices update every 15 seconds using CoinGecko API
-- **Three Alarm Types**:
-  1. **Target Price**: Alert when price reaches a specific value (from above, below, or any direction)
-  2. **% Change from Max/Min**: Alert when price moves a certain percentage from its maximum or minimum
-  3. **% Move in Timeframe**: Alert when price moves a certain percentage within a specified time period
-- **Continuous Alarm Sound**: Audible alerts that play until manually dismissed
-- **Persistent Storage**: All settings and alarms are saved in your browser
-- **Clean, Minimal Design**: Intuitive interface focused on functionality
-- **Reliable Monitoring**: Continuous background monitoring with status indicator
-- **Smart Price Formatting**: Automatic decimal precision based on pair type
+```
+start.bat            # Windows: creates a venv, installs, starts
+./start.sh           # macOS / Linux
+```
 
-## How to Use
+or manually:
 
-### Getting Started
+```
+pip install -e .
+python -m crypto_alarm      # then open http://localhost:5000
+```
 
-1. Open `index.html` in your web browser
-2. The app will start monitoring immediately
+Add any Binance symbol (`BTCUSDT`, `ETHBTC`, `SOLUSDC`, ...). Pairs are validated against
+Binance's `exchangeInfo`.
 
-### Adding Trading Pairs
+### Docker
 
-1. Enter a trading pair (e.g., BTCUSDT, ETHBTC, BNBETH) in the "Add Trading Pair" field
-2. Click "Add Pair" or press Enter
-3. The app will fetch the current price and display the pair
+```
+docker compose up -d
+```
 
-**Supported Quote Currencies**: USDT, USDC, USD, BUSD, DAI, BTC, ETH, BNB, EUR, GBP
+Serves on `127.0.0.1:5000` with gunicorn (one worker, state lives in the process) and keeps data
+in a named volume. `GET /healthz` reports the price feed state and returns 503 when it is down.
 
-**Examples**:
-- `BTCUSDT` - Bitcoin priced in Tether (stablecoin)
-- `ETHBTC` - Ethereum priced in Bitcoin
-- `BNBETH` - Binance Coin priced in Ethereum
-- `SOLUSDC` - Solana priced in USD Coin
+## Alarms
 
-### Configuring Alarms
+| Type | Fires when |
+|------|-----------|
+| Target price | the price crosses the target (from below, from above, or either). A new alarm also fires immediately if the price is already beyond the target. A triggered target alarm can be restarted after a 60 s cooldown. |
+| % from max / min | the price is X% below the highest / above the lowest price seen since the pair was added (use **Reset max/min** to restart tracking) |
+| % move in timeframe | the price moved X% versus one full window ago (minutes, hours or days, up to 7 days), or versus the start price for "since start" (which re-arms itself after every trigger) |
 
-1. Click the "Alarms" button on any trading pair
-2. Choose from three alarm types:
+Alarms are evaluated every second on a live price and ignore prices older than two minutes
+(those pairs show a **stale** badge). Triggered alarms nobody dismissed are shown again when a
+browser connects. The header shows whether prices come from the stream, the REST fallback, or
+are down.
 
-   **Target Price Alert**
-   - Enter a target price (in the quote currency of the pair)
-   - Example: For BTCUSDT, enter price in USDT (e.g., 50000)
-   - Example: For ETHBTC, enter price in BTC (e.g., 0.055)
-   - Choose direction: any, from below (going up), or from above (going down)
-   - Click "Add"
+## Notifications when no browser is open
 
-   **% Change from Max/Min**
-   - Enter the percentage change threshold
-   - Choose: % down from max or % up from min
-   - Click "Add"
+| Channel | Variables |
+|---------|-----------|
+| ntfy | `NTFY_TOPIC` (optional `NTFY_SERVER`) |
+| Telegram | `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` |
+| Webhook | `ALARM_WEBHOOK_URL` (receives JSON `{"title", "message"}`) |
 
-   **% Move in Timeframe**
-   - Enter the percentage change threshold
-   - Choose direction: any, upward, or downward
-   - Enter the time value and select unit:
-     - **Minutes**: Short-term movements (e.g., 5% in 15 minutes)
-     - **Hours**: Medium-term movements (e.g., 10% in 2 hours)
-     - **Days**: Long-term movements (e.g., 20% in 3 days)
-     - **Since start**: Tracks % move from when the alarm was created/last triggered
-       - This alarm automatically resets after triggering and continues monitoring
-       - No time value needed for this option
-   - Click "Add"
+Repeat notifications for the same alarm are suppressed for 30 seconds.
 
-3. Click "Back to Assets" to return to the main view
+## Configuration
 
-### When an Alarm Triggers
+Everything is configured through environment variables; [`.env.example`](.env.example) documents
+all of them. The server binds to `127.0.0.1` by default. **There is no authentication**: only
+bind `0.0.0.0` on a network you trust.
 
-1. A modal will appear with alarm details
-2. A continuous alarm sound will play
-3. Click "DISMISS ALARM" to stop the sound and close the notification
-4. Triggered alarms will be marked in the alarms list
+Data is stored in `data/crypto_data_binance.json` inside the project (override with
+`CRYPTO_ALARM_DATA`). It is written atomically, and an unreadable file is kept as `.corrupt`.
 
-### Managing Pairs and Alarms
+## Architecture
 
-- **Remove Pair**: Click the "Remove" button on any pair (this also removes all associated alarms)
-- **Remove Alarm**: In the alarms view, click "Remove" on any individual alarm
-- **View Alarm Count**: Each pair shows the number of configured alarms
+```mermaid
+flowchart LR
+    B[(Binance)] -- WebSocket ticker stream --> F[PriceFeed]
+    B -- REST: validation, klines, fallback --> C[BinanceClient]
+    F --> M[Monitor]
+    C --> M
+    M -- evaluate --> E[engine + rules]
+    M <--> S[(JsonStore)]
+    M -- trigger --> N[Notifier: ntfy / Telegram / webhook]
+    M <-- Socket.IO --> W[web.py] <--> U[Browser UI]
+```
 
-## Technical Details
+| Module | Responsibility |
+|--------|----------------|
+| `settings.py` | all configuration, read once from the environment |
+| `models.py` | typed `Asset` / `Alarm` dataclasses and their JSON mapping |
+| `rules.py`, `engine.py` | pure validation and trigger logic; message building |
+| `formatting.py`, `views.py` | display text and the JSON the browser receives |
+| `binance.py` | REST client and WebSocket price feed |
+| `monitor.py` | state, operations, evaluation loop |
+| `store.py` | atomic JSON persistence |
+| `notifier.py` | server-side notifications |
+| `web.py` | Flask app factory, Socket.IO events, `/healthz` |
 
-- **No Installation Required**: Pure HTML/CSS/JavaScript
-- **No API Key Needed**: Uses CoinGecko's free public API
-- **Browser Compatibility**: Works in all modern browsers with Web Audio API support
-- **Update Interval**: 15 seconds (can be adjusted in `app.js`)
-- **Data Persistence**: Uses LocalStorage to save configuration
-- **Price History**: Keeps 24 hours of price data for timeframe calculations
-- **Pair Calculation**: For stablecoin pairs, uses USD as proxy; for others, calculates ratio between base and quote
+The browser UI (`static/js/*.js`, ES modules) only renders what the server sends; prices,
+descriptions and "% till trigger" are all computed server-side.
 
-## Tips for Best Results
-
-1. **Keep the tab visible**: IMPORTANT - For the most reliable alarm sound, keep the browser tab visible or use a separate window. Browser audio contexts can be suspended when tabs are inactive for extended periods.
-2. **Allow audio**: Make sure your browser allows audio playback from the page. Click the "🔔 Test Alarm" button to verify sound works.
-3. **Check system volume**: The alarm plays at 60% volume. Ensure your system volume is adequate.
-4. **Visual alerts**: Even if you can't hear the sound, the page title will flash "🚨 ALARM TRIGGERED! 🚨" when an alarm fires.
-5. **Stable connection**: Ensure a stable internet connection for reliable price updates
-6. **Reasonable thresholds**: Set alarm thresholds that account for normal price volatility
-7. **Test before relying**: Use the test alarm button to verify everything works before setting important alarms
-8. **Check pair format**: Ensure the quote currency is one of the supported currencies
-
-## Alarm Examples
-
-**For BTCUSDT (stablecoin pair)**:
-- **Bull Run Alert**: Target price 60000 with "from below" direction
-- **Stop Loss**: 10% down from max
-- **Quick Pump**: 3% up in 30 minutes
-- **Hourly Volatility**: 5% move (any direction) in 2 hours
-- **Daily Target**: 15% up in 1 day
-- **Session Tracker**: 8% move since start (resets on trigger)
-
-**For ETHBTC (crypto pair)**:
-- **Breaking Resistance**: Target price 0.06 with "from below" direction
-- **Ratio Drop Alert**: 5% down from max
-- **Short-term Spike**: 2% move (any direction) in 15 minutes
-- **Trending Move**: 10% up in 4 hours
-- **Swing Trading**: 5% move since start (resets after each trigger)
-
-**Max/Min Tracking Note**:
-- Max/Min prices are tracked from the moment you add the pair
-- They persist across app restarts (saved in browser storage)
-- Reset only when you remove and re-add the pair
-
-## Limitations
-
-- Relies on CoinGecko API availability and rate limits
-- Price updates occur every 15 seconds (not real-time tick data)
-- Max/min prices reset when you remove and re-add a pair
-- Timeframe alarms require sufficient price history
-- Both assets in the pair must be available on CoinGecko
-- Quote currency must be one of the supported currencies
-
-## Troubleshooting
-
-**Invalid pair format**: Make sure the pair ends with a supported quote currency (USDT, BTC, ETH, etc.)
-
-**Base asset not found**: Verify the base token symbol exists on CoinGecko
-
-**Quote asset not found**: Ensure quote currency is spelled correctly and supported
-
-**No alarm sound / Sound stops playing**:
-- Check browser audio permissions and system volume
-- Keep the browser tab VISIBLE - browser suspends audio for inactive tabs
-- Look for the flashing page title "🚨 ALARM TRIGGERED! 🚨" as a visual backup
-- Open browser console (F12) and check for audio context warnings
-- Use the "🔔 Test Alarm" button to verify audio is working
-- If tab was inactive for a long time, the audio context may have been suspended
-
-**Prices not updating**: Check internet connection and browser console for errors
-
-**Alarms not triggering**: Verify alarm conditions are possible with current price action
-
-## Privacy
-
-All data is stored locally in your browser. No information is sent to any server except API requests to CoinGecko for price data.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development.

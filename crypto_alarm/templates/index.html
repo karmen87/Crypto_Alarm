@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <title>Crypto Price Alarm</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="{{ url_for('static', filename='vendor/socket.io.min.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Crypto Price Alarm</h1>
+            <div class="header-right">
+                <button id="testAlarmBtn" class="btn-test" title="Test alarm sound and volume">Test alarm</button>
+                <div class="status-indicator" role="status" aria-live="polite">
+                    <span class="status-dot" id="statusDot" aria-hidden="true"></span>
+                    <span id="statusText">Connecting...</span>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <section class="card" aria-labelledby="addPairHeading" id="addPairSection">
+                <h2 id="addPairHeading">Add trading pair</h2>
+                <form class="form-group" id="addAssetForm">
+                    <label class="sr-only" for="assetTicker">Trading pair</label>
+                    <input type="text" id="assetTicker" placeholder="Enter trading pair (e.g., BTCUSDT, ETHBTC)"
+                           autocomplete="off" autocapitalize="characters" spellcheck="false" required>
+                    <button type="submit" class="btn-primary">Add pair</button>
+                </form>
+                <div id="assetError" class="error-message" role="alert"></div>
+            </section>
+
+            <section class="card" id="overviewSection">
+                <div class="tab-buttons" role="tablist" aria-label="Views">
+                    <button class="tab-button active" role="tab" id="tab-monitored-pairs" aria-selected="true"
+                            aria-controls="monitored-pairs" data-tab="monitored-pairs">Monitored pairs</button>
+                    <button class="tab-button" role="tab" id="tab-all-alarms" aria-selected="false"
+                            aria-controls="all-alarms" data-tab="all-alarms">All active alarms</button>
+                </div>
+
+                <div class="tab-content active" role="tabpanel" id="monitored-pairs" aria-labelledby="tab-monitored-pairs">
+                    <div id="assetsList" class="assets-list"></div>
+                    <p id="assetsPlaceholder" class="placeholder">No pairs added yet</p>
+                </div>
+
+                <div class="tab-content" role="tabpanel" id="all-alarms" aria-labelledby="tab-all-alarms">
+                    <div class="data-grid">
+                        <table id="allAlarmsTable">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Trading pair</th>
+                                    <th scope="col">Type of alarm</th>
+                                    <th scope="col">% till trigger</th>
+                                    <th scope="col">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <p id="allAlarmsPlaceholder" class="placeholder">No active alarms</p>
+                </div>
+            </section>
+
+            <section class="card" id="alarmsSection" hidden>
+                <h2>Configure alarms for <span id="selectedAssetName"></span></h2>
+                <p class="extremes">
+                    <span id="extremesText"></span>
+                    <button type="button" class="btn-small btn-ghost" id="resetExtremesBtn"
+                            title="Restart max/min tracking from the current price">Reset max/min</button>
+                </p>
+
+                <div class="alarm-forms">
+                    <form class="alarm-form" id="targetForm">
+                        <h3>Target price alert</h3>
+                        <div class="form-row">
+                            <label class="sr-only" for="targetPrice">Target price</label>
+                            <input type="number" id="targetPrice" placeholder="Target price" step="any" min="0" required>
+                            <label class="sr-only" for="targetDirection">Direction</label>
+                            <select id="targetDirection">
+                                <option value="any">From any direction</option>
+                                <option value="up">From below (going up)</option>
+                                <option value="down">From above (going down)</option>
+                            </select>
+                            <button type="submit" class="btn-secondary">Add</button>
+                        </div>
+                    </form>
+
+                    <form class="alarm-form" id="extremeForm">
+                        <h3>% change from max/min</h3>
+                        <div class="form-row">
+                            <label class="sr-only" for="percentFromExtreme">Percentage</label>
+                            <input type="number" id="percentFromExtreme" placeholder="Percentage" step="0.1" min="0" required>
+                            <label class="sr-only" for="extremeType">Reference</label>
+                            <select id="extremeType">
+                                <option value="max">% down from max</option>
+                                <option value="min">% up from min</option>
+                            </select>
+                            <button type="submit" class="btn-secondary">Add</button>
+                        </div>
+                    </form>
+
+                    <form class="alarm-form" id="timeframeForm">
+                        <h3>% move in timeframe</h3>
+                        <div class="form-row">
+                            <label class="sr-only" for="percentMove">Percentage</label>
+                            <input type="number" id="percentMove" placeholder="Percentage" step="0.1" min="0" required>
+                            <label class="sr-only" for="moveDirection">Direction</label>
+                            <select id="moveDirection">
+                                <option value="any">Any direction</option>
+                                <option value="up">Upward</option>
+                                <option value="down">Downward</option>
+                            </select>
+                            <label class="sr-only" for="timeframeValue">Time</label>
+                            <input type="number" id="timeframeValue" placeholder="Time" step="1" min="1" required>
+                            <label class="sr-only" for="timeframeUnit">Unit</label>
+                            <select id="timeframeUnit">
+                                <option value="minutes">Minutes</option>
+                                <option value="hours">Hours</option>
+                                <option value="days">Days (max 7)</option>
+                                <option value="since_start">Since start</option>
+                            </select>
+                            <button type="submit" class="btn-secondary">Add</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="alarms-list">
+                    <h3>Active alarms</h3>
+                    <div id="activeAlarmsList"></div>
+                    <p id="activeAlarmsPlaceholder" class="placeholder">No alarms configured</p>
+                </div>
+
+                <button type="button" class="btn-back" id="backToAssetsBtn">Back to pairs</button>
+            </section>
+        </main>
+    </div>
+
+    <div id="alarmModal" class="modal" role="alertdialog" aria-modal="true"
+         aria-labelledby="alarmTitle" aria-describedby="alarmMessage" hidden>
+        <div class="modal-content">
+            <div class="alarm-direction" id="alarmDirection" aria-hidden="true"></div>
+            <h2 id="alarmTitle">Price alarm</h2>
+            <div id="alarmMessage"></div>
+            <div id="alarmButtons" class="modal-buttons"></div>
+        </div>
+    </div>
+</body>
+</html>

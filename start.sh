@@ -1,33 +1,19 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -e
+cd "$(dirname "$0")"
 
-echo "======================================"
-echo "  Crypto Price Alarm - Python Flask  "
-echo "======================================"
-echo ""
-
-# Check if virtual environment exists
-if [ ! -d "venv" ]; then
-    echo "Virtual environment not found. Creating one..."
+if [ ! -d venv ]; then
+    echo "Creating virtual environment..."
     python3 -m venv venv
-    echo "✓ Virtual environment created"
 fi
 
-# Activate virtual environment
-echo "Activating virtual environment..."
 source venv/bin/activate
 
-# Install dependencies
 echo "Installing/updating dependencies..."
-pip install -q -r requirements.txt
-echo "✓ Dependencies installed"
+pip install -q -e .
 
-echo ""
-echo "======================================"
-echo "Starting Flask server..."
-echo "Open http://localhost:5000 in your browser"
-echo "Press Ctrl+C to stop the server"
-echo "======================================"
-echo ""
+echo
+echo "Open http://localhost:5000 in your browser. Press Ctrl+C to stop."
+echo
 
-# Run the app
-python app.py
+python -m crypto_alarm

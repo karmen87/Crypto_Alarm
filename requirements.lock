@@ -1,0 +1,23 @@
+﻿# Pinned runtime dependencies (including the optional 'server' extra). Regenerate with:
+#   pip install -e '.[server]' && pip freeze --exclude-editable > requirements.lock
+bidict==0.24.1
+blinker==1.9.0
+certifi==2026.7.22
+charset-normalizer==3.5.2
+click==8.5.0
+Flask==3.1.3
+Flask-SocketIO==5.7.0
+gunicorn==26.2.0
+h11==0.16.0
+idna==3.20
+itsdangerous==2.2.0
+Jinja2==3.1.6
+MarkupSafe==3.0.4
+python-engineio==4.14.0
+python-socketio==5.17.0
+requests==2.34.2
+simple-websocket==1.1.0
+urllib3==2.8.0
+websocket-client==1.9.2
+Werkzeug==3.1.9
+wsproto==1.3.2
