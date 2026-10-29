@@ -40,6 +40,9 @@ extend-exclude = ["docs"]  # Hugo site: its Markdown holds illustrative snippets
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "SIM", "C4", "RUF"]
 
+[tool.ruff.lint.per-file-ignores]
+"crypto_analysis.py" = ["E501"]  # long lines live in the embedded HTML/JS template
+
 [tool.mypy]
 python_version = "3.10"
 strict = true

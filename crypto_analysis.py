@@ -4,12 +4,12 @@ Single-file web application for calculating and visualizing beta, correlation,
 and covariance for cryptocurrency assets using MEXC API.
 """
 
-from flask import Flask, render_template_string, request, jsonify
-import requests
-import pandas as pd
+from datetime import timedelta
+
 import numpy as np
-from datetime import datetime, timedelta
-import json
+import pandas as pd
+import requests
+from flask import Flask, jsonify, render_template_string, request
 
 app = Flask(__name__)
 
@@ -29,22 +29,37 @@ DEFAULT_ASSETS = ["BTCUSDT", "ETHUSDT", "SOLUSDT",
 """
 
 
+DEFAULT_ASSETS = [
+    "XMRUSDT",
+    "CCUSDT",
+    "LINKUSDT",
+    "LTCUSDT",
+    "ZECUSDT",
+    "NIGHTUSDT",
+    "DASHUSDT",
+    "XTZUSDT",
+    "DCRUSDT",
+    "BDXUSDT",
+]
 
-DEFAULT_ASSETS = [ "XMRUSDT","CCUSDT", "LINKUSDT", "LTCUSDT",
-                   "ZECUSDT", "NIGHTUSDT", "DASHUSDT", "XTZUSDT",
-                    "DCRUSDT", "BDXUSDT"]
+
+DEFAULT_ASSETS = [
+    "BTCUSDT",
+    "ETHUSDT",
+    "SOLUSDT",
+    "BNBUSDT",
+    "ZKUSDT",
+    "ZECUSDT",
+    "XMRUSDT",
+    "HYPEUSDT",
+    "NIGHTUSDT",
+    "TAOUSDT",
+    "RIVERUSDT",
+    "RAINUSDT",
+]
 
 
-
-DEFAULT_ASSETS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT",
-                  "ZKUSDT", "ZECUSDT", "XMRUSDT",  "HYPEUSDT",
-                  "NIGHTUSDT", "TAOUSDT", "RIVERUSDT", "RAINUSDT"
-                ]
-
-
-DEFAULT_ASSETS = ["BTCUSDT", "PIUSDT", "SENTUSDT", "HYPEUSDT", "HUSDT" , "KITEUSDT"
-
-                ]
+DEFAULT_ASSETS = ["BTCUSDT", "PIUSDT", "SENTUSDT", "HYPEUSDT", "HUSDT", "KITEUSDT"]
 
 # Lookback window configurations (in minutes)
 LOOKBACK_WINDOWS = {
@@ -57,7 +72,7 @@ LOOKBACK_WINDOWS = {
     "720": 720,
     "1440": 1440,  # 1 day
     "2880": 2880,  # 2 days
-    "10080": 10080  # 1 week
+    "10080": 10080,  # 1 week
 }
 
 # MEXC API interval mapping (MEXC uses different format than standard)
@@ -69,7 +84,7 @@ INTERVAL_MAP = {
     60: "60m",  # MEXC uses "60m" not "1h"
     120: "60m",  # Use 60m and fetch more data (no 2h available)
     240: "4h",
-    720: "4h"  # Use 4h and fetch more data (no 12h available)
+    720: "4h",  # Use 4h and fetch more data (no 12h available)
 }
 
 # Available MEXC API intervals for user selection
@@ -82,19 +97,16 @@ AVAILABLE_INTERVALS = [
     ("4h", "4 hours"),
     ("1d", "1 day"),
     ("1W", "1 week"),
-    ("1M", "1 month")
+    ("1M", "1 month"),
 ]
+
 
 def fetch_klines(symbol, interval, limit=1000):
     """
     Fetch kline data from MEXC API
     """
     url = "https://api.mexc.com/api/v3/klines"
-    params = {
-        "symbol": symbol,
-        "interval": interval,
-        "limit": limit
-    }
+    params = {"symbol": symbol, "interval": interval, "limit": limit}
 
     try:
         response = requests.get(url, params=params, timeout=10)
@@ -102,16 +114,28 @@ def fetch_klines(symbol, interval, limit=1000):
         data = response.json()
 
         # Parse kline data: [Open time, Open, High, Low, Close, Volume, Close time, ...]
-        df = pd.DataFrame(data, columns=['open_time', 'open', 'high', 'low', 'close',
-                                         'volume', 'close_time', 'quote_volume'])
-        df['timestamp'] = pd.to_datetime(df['open_time'], unit='ms')
-        df['close'] = df['close'].astype(float)
-        df = df[['timestamp', 'close']].set_index('timestamp')
+        df = pd.DataFrame(
+            data,
+            columns=[
+                "open_time",
+                "open",
+                "high",
+                "low",
+                "close",
+                "volume",
+                "close_time",
+                "quote_volume",
+            ],
+        )
+        df["timestamp"] = pd.to_datetime(df["open_time"], unit="ms")
+        df["close"] = df["close"].astype(float)
+        df = df[["timestamp", "close"]].set_index("timestamp")
 
         return df
     except Exception as e:
-        print(f"Error fetching data for {symbol}: {str(e)}")
+        print(f"Error fetching data for {symbol}: {e!s}")
         return None
+
 
 def synchronize_timeseries(data_dict):
     """
@@ -122,12 +146,9 @@ def synchronize_timeseries(data_dict):
 
     # Find common timestamps across all assets
     common_index = None
-    for symbol, df in data_dict.items():
+    for df in data_dict.values():
         if df is not None:
-            if common_index is None:
-                common_index = df.index
-            else:
-                common_index = common_index.intersection(df.index)
+            common_index = df.index if common_index is None else common_index.intersection(df.index)
 
     if common_index is None or len(common_index) == 0:
         return None
@@ -140,11 +161,13 @@ def synchronize_timeseries(data_dict):
 
     return synchronized_data
 
+
 def calculate_returns(prices_df):
     """
     Calculate percentage returns from price data
     """
     return prices_df.pct_change().dropna()
+
 
 def calculate_volatility_metrics(prices_df, returns_df):
     """
@@ -175,7 +198,7 @@ def calculate_volatility_metrics(prices_df, returns_df):
 
         # R-squared for price
         ss_tot_price = np.sum((prices - np.mean(prices)) ** 2)
-        ss_res_price = np.sum(price_residuals ** 2)
+        ss_res_price = np.sum(price_residuals**2)
         price_r_squared = 1 - (ss_res_price / ss_tot_price) if ss_tot_price != 0 else 0
 
         # Trend assumption - for returns
@@ -189,22 +212,25 @@ def calculate_volatility_metrics(prices_df, returns_df):
 
         # R-squared for returns
         ss_tot_returns = np.sum((returns - np.mean(returns)) ** 2)
-        ss_res_returns = np.sum(returns_residuals ** 2)
+        ss_res_returns = np.sum(returns_residuals**2)
         returns_r_squared = 1 - (ss_res_returns / ss_tot_returns) if ss_tot_returns != 0 else 0
 
-        volatility_data.append({
-            'asset': col,
-            'price_vol_no_trend': price_vol_no_trend,
-            'returns_vol_no_trend': returns_vol_no_trend,
-            'price_mean_trend': price_mean_trend,
-            'price_vol_with_trend': price_vol_with_trend,
-            'price_r_squared': price_r_squared,
-            'returns_mean_trend': returns_mean_trend,
-            'returns_vol_with_trend': returns_vol_with_trend,
-            'returns_r_squared': returns_r_squared
-        })
+        volatility_data.append(
+            {
+                "asset": col,
+                "price_vol_no_trend": price_vol_no_trend,
+                "returns_vol_no_trend": returns_vol_no_trend,
+                "price_mean_trend": price_mean_trend,
+                "price_vol_with_trend": price_vol_with_trend,
+                "price_r_squared": price_r_squared,
+                "returns_mean_trend": returns_mean_trend,
+                "returns_vol_with_trend": returns_vol_with_trend,
+                "returns_r_squared": returns_r_squared,
+            }
+        )
 
     return pd.DataFrame(volatility_data)
+
 
 def calculate_statistics(returns_df, prices_df):
     """
@@ -232,7 +258,7 @@ def calculate_statistics(returns_df, prices_df):
     beta_matrix = beta_matrix.astype(float)
 
     # Normalize prices to start at 100
-    normalized_prices = (prices_df / prices_df.iloc[0] * 100)
+    normalized_prices = prices_df / prices_df.iloc[0] * 100
 
     # Calculate volatility metrics
     volatility_metrics = calculate_volatility_metrics(prices_df, returns_df)
@@ -240,7 +266,7 @@ def calculate_statistics(returns_df, prices_df):
     # Get time range
     time_range = {
         "oldest": prices_df.index.min().strftime("%Y-%m-%d %H:%M:%S"),
-        "newest": prices_df.index.max().strftime("%Y-%m-%d %H:%M:%S")
+        "newest": prices_df.index.max().strftime("%Y-%m-%d %H:%M:%S"),
     }
 
     return {
@@ -249,10 +275,11 @@ def calculate_statistics(returns_df, prices_df):
         "beta": beta_matrix,
         "volatility_metrics": volatility_metrics,
         "normalized_prices": normalized_prices,
-        "time_range": time_range
+        "time_range": time_range,
     }
 
-@app.route('/')
+
+@app.route("/")
 def index():
     """
     Render the main page
@@ -262,26 +289,29 @@ def index():
         HTML_TEMPLATE,
         default_assets=default_assets_str,
         lookback_windows=LOOKBACK_WINDOWS,
-        available_intervals=AVAILABLE_INTERVALS
+        available_intervals=AVAILABLE_INTERVALS,
     )
 
-@app.route('/analyze', methods=['POST'])
+
+@app.route("/analyze", methods=["POST"])
 def analyze():
     """
     Perform analysis based on user inputs
     """
     try:
         data = request.json
-        lookback_window = int(data.get('lookback_window', 60))
-        extra_assets = data.get('extra_assets', [])
+        lookback_window = int(data.get("lookback_window", 60))
+        extra_assets = data.get("extra_assets", [])
 
         # Get interval from request, or fall back to INTERVAL_MAP
-        interval = data.get('interval')
+        interval = data.get("interval")
         if not interval:
             interval = INTERVAL_MAP.get(lookback_window, "60m")
 
         # Combine default and extra assets
-        all_assets = DEFAULT_ASSETS + [asset.strip().upper() for asset in extra_assets if asset.strip()]
+        all_assets = DEFAULT_ASSETS + [
+            asset.strip().upper() for asset in extra_assets if asset.strip()
+        ]
         all_assets = list(dict.fromkeys(all_assets))  # Remove duplicates while preserving order
 
         # Fetch data for all assets
@@ -301,7 +331,7 @@ def analyze():
             return jsonify({"error": "Failed to synchronize time series data"}), 400
 
         # Create combined price dataframe
-        prices_df = pd.DataFrame({symbol: df['close'] for symbol, df in synchronized_data.items()})
+        prices_df = pd.DataFrame({symbol: df["close"] for symbol, df in synchronized_data.items()})
 
         # Truncate data to lookback window
         # Calculate the cutoff time based on lookback window in minutes
@@ -313,23 +343,33 @@ def analyze():
             # Ensure we have enough data points for statistical calculations
             # Need at least 3 points: 1 for initial price + 2 returns for covariance calculation
             if len(prices_df) < 3:
-                return jsonify({"error": f"Not enough data points ({len(prices_df)}) in {lookback_window} minute window. Need at least 3 data points. Try a longer lookback window or smaller interval."}), 400
+                msg = (
+                    f"Not enough data points ({len(prices_df)}) in {lookback_window} minute "
+                    "window. Need at least 3 data points. "
+                    "Try a longer lookback window or smaller interval."
+                )
+                return jsonify({"error": msg}), 400
 
         # Calculate returns
         returns_df = calculate_returns(prices_df)
 
         # Validate that we have enough returns for statistics (need at least 2 returns)
         if len(returns_df) < 2:
-            return jsonify({"error": f"Not enough return data points ({len(returns_df)}) for statistical analysis. Need at least 2 returns. Try a longer lookback window or smaller interval."}), 400
+            msg = (
+                f"Not enough return data points ({len(returns_df)}) for statistical analysis. "
+                "Need at least 2 returns. Try a longer lookback window or smaller interval."
+            )
+            return jsonify({"error": msg}), 400
 
         # Calculate statistics
         stats = calculate_statistics(returns_df, prices_df)
 
         # Replace NaN values with None (which converts to null in JSON)
-        correlation_dict = stats["correlation"].replace({np.nan: None, np.inf: None, -np.inf: None}).to_dict()
-        covariance_dict = stats["covariance"].replace({np.nan: None, np.inf: None, -np.inf: None}).to_dict()
-        beta_dict = stats["beta"].replace({np.nan: None, np.inf: None, -np.inf: None}).to_dict()
-        volatility_dict = stats["volatility_metrics"].replace({np.nan: None, np.inf: None, -np.inf: None}).to_dict(orient='records')
+        to_null = {np.nan: None, np.inf: None, -np.inf: None}
+        correlation_dict = stats["correlation"].replace(to_null).to_dict()
+        covariance_dict = stats["covariance"].replace(to_null).to_dict()
+        beta_dict = stats["beta"].replace(to_null).to_dict()
+        volatility_dict = stats["volatility_metrics"].replace(to_null).to_dict(orient="records")
 
         # Prepare response - convert to proper JSON-serializable format
         response = {
@@ -338,17 +378,23 @@ def analyze():
             "beta": beta_dict,
             "volatility_metrics": volatility_dict,
             "normalized_prices": {
-                "timestamps": [ts.strftime("%Y-%m-%d %H:%M") for ts in stats["normalized_prices"].index],
-                "data": {col: stats["normalized_prices"][col].replace({np.nan: None, np.inf: None, -np.inf: None}).tolist() for col in stats["normalized_prices"].columns}
+                "timestamps": [
+                    ts.strftime("%Y-%m-%d %H:%M") for ts in stats["normalized_prices"].index
+                ],
+                "data": {
+                    col: stats["normalized_prices"][col].replace(to_null).tolist()
+                    for col in stats["normalized_prices"].columns
+                },
             },
             "time_range": stats["time_range"],
-            "assets": all_assets
+            "assets": all_assets,
         }
 
         return jsonify(response)
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 # HTML Template
 HTML_TEMPLATE = """
@@ -1046,7 +1092,7 @@ HTML_TEMPLATE = """
 </html>
 """
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print("Starting Crypto Asset Analysis Web Application...")
     print("Open your browser and navigate to: http://127.0.0.1:5000")
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host="0.0.0.0", port=5000)
